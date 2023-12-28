@@ -1,34 +1,74 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
+import { connect } from 'react-redux';
+import { fetchQuiz, postAnswer, selectAnswer } from '../state/action-creators';
 
-export default function Quiz(props) {
+const Quiz = (props) => {
+ const { 
+  quizState, 
+  selectedAnswerState, 
+  fetchQuiz, 
+  postAnswer,
+  selectAnswer
+ } = props;
+
+ const [ disabled, setDisabled] = useState(true);
+
+ useEffect(() => {
+  selectedAnswerState ? setDisabled(false) : setDisabled(true);
+ },[selectedAnswerState]);
+
+ const onClick = e => {
+  selectAnswer(e.target.id);
+ }
+
+ const onSubmit = e => {
+  e.preventDefault();
+  postAnswer({
+   "quiz_id": quizState.quiz_id, 
+   "answer_id": selectedAnswerState
+  });
+  fetchQuiz();
+ }
+
+ useEffect(() => {
+  quizState ? null : fetchQuiz();
+ },[])
+
   return (
     <div id="wrapper">
       {
-        // quiz already in state? Let's use that, otherwise render "Loading next quiz..."
-        true ? (
+        quizState ? (
           <>
-            <h2>What is a closure?</h2>
+            <h2>{quizState.question}</h2>
 
             <div id="quizAnswers">
-              <div className="answer selected">
-                A function
-                <button>
-                  SELECTED
+              <div className={`${quizState.answers[0].answer_id === selectedAnswerState ? " answer selected" : "answer"}`}>
+                {quizState.answers[0].text}
+                <button id={quizState.answers[0].answer_id} onClick={onClick}>
+                  {quizState.answers[0].answer_id === selectedAnswerState ? "SELECTED" : "select"}
                 </button>
               </div>
 
-              <div className="answer">
-                An elephant
-                <button>
-                  Select
+              <div className={`${quizState.answers[1].answer_id === selectedAnswerState ? "answer selected" : "answer"}`}>
+              {quizState.answers[1].text}
+                <button id={quizState.answers[1].answer_id} onClick={onClick}>
+                  {quizState.answers[1].answer_id === selectedAnswerState ? "SELECTED" : "select"}
                 </button>
               </div>
             </div>
 
-            <button id="submitAnswerBtn">Submit answer</button>
+            <button id="submitAnswerBtn" disabled={disabled} onClick={onSubmit}>Submit answer</button>
           </>
         ) : 'Loading next quiz...'
       }
     </div>
   )
 }
+
+const mapState = state => ({
+ ...state,
+ quizState: state.quizState,
+ selectedAnswerState: state.selectedAnswerState
+})
+
+export default connect(mapState,{ fetchQuiz, selectAnswer, postAnswer })(Quiz);
